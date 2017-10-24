@@ -1,0 +1,52 @@
+// This file is part of the program: Architecture Independent Profiler (AIP).
+//
+// AIP is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// AIP is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with AIP.  If not, see <http://www.gnu.org/licenses/>.
+//
+// Authors: Sam Van den Steen, Ghent University
+// Copyright: 2016, Ghent University
+
+syntax="proto3";
+package mlp_file;
+
+message Load_chain{
+	uint32 ROB_size = 1;
+	repeated uint32 frequency = 2;
+}
+
+message PC_reuse{
+	// first occurence in the trace (e.g. somewhere between 0 and 'uopcount')
+	uint32 first_reference = 1;
+	// y - x (e.g. the pc is used at uop count x first and uop count y after, will never be bigger than 'uopcount')
+	repeated uint32 reuse = 2;
+	// it can occur at most 'uopcount' times and this is a relatively small number (e.g. 1000)
+	repeated uint32 times = 3;
+}
+
+message PC_stride{
+	uint64 first_address = 1;
+	// y - x (e.g. the pc loads/stores memory address x first and memory address y after)
+	repeated uint64 stride = 2;
+	// it can occur at most 'uopcount' times and this is a relatively small number (e.g. 1000)
+	repeated uint32 times = 3;
+}
+
+message MLP_Trace{
+	uint32 trace_id = 1;
+	// saves a vector of doubles per ROB size
+	repeated Load_chain chain_stats = 2;
+	// following messages are saved for each PC
+	repeated uint64 pc = 3;
+	repeated PC_reuse reuse_stats = 4;
+	repeated PC_stride stride_stats = 5;
+}

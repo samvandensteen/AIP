@@ -1,0 +1,37 @@
+// This file is part of the program: Architecture Independent Profiler (AIP).
+//
+// AIP is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// AIP is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with AIP.  If not, see <http://www.gnu.org/licenses/>.
+//
+// Authors: Sam Van den Steen, Ghent University
+// Copyright: 2016, Ghent University
+
+syntax="proto3";
+package cold_file;
+
+message ROB_cold_distribution{
+	// cacheblock size for this instance
+	uint32 cacheblock_size = 1;
+	// ROB size for this instance
+	uint32 ROB_size = 2;
+	// number of cold misses for this ROB size
+	repeated uint32 misses_in_ROB = 3;
+	// number of times we see an ROB with x misses_in_ROB
+	repeated uint64 occurences = 4;
+}
+
+message Cold_Window{
+	uint32 window_id = 1;
+	// saves a vector of different ROB sizes with a frequency vector of the number of misses for that ROB size
+	repeated ROB_cold_distribution cold_distribution = 2;
+}

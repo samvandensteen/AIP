@@ -1,0 +1,18 @@
+# C++ compiled
+*.o
+
+# libraries
+*.a
+
+# tool
+obj-intel64/*
+
+# protobuf
+*.pb.cc
+*.pb.h
+
+# AIF test and benchmark files
+aif_lib/test/test_*/test_*_file
+aif_lib/test/test_*/benchmark
+aif_lib/tools/*_reader
+

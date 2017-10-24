@@ -1,0 +1,40 @@
+// This file is part of the program: Architecture Independent Profiler (AIP).
+//
+// AIP is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// AIP is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with AIP.  If not, see <http://www.gnu.org/licenses/>.
+//
+// Authors: Sam Van den Steen, Ghent University
+// Copyright: 2016, Ghent University
+
+syntax="proto3";
+package branch_file;
+
+message IP_Bits{
+  // number of ipbits used
+  uint32 bits = 1;
+  // number of bhr bits used (a.k.a size of table)
+  repeated uint32 bhr_bits = 2;
+  // entropy value
+  repeated double entropy = 3;
+}
+
+message Entropy_Window{
+  // trace counter
+  uint64 entropy_window_id = 1;
+  // entropy type, can be local (l), global (g) or tournament (t)
+  string type = 2;
+  // number of branches encountered in trace
+  uint64 branches = 3;
+  // x number of ip_bits objects per trace
+  repeated IP_Bits ips = 4;
+}

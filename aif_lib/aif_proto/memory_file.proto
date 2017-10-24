@@ -1,0 +1,60 @@
+// This file is part of the program: Architecture Independent Profiler (AIP).
+//
+// AIP is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// AIP is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with AIP.  If not, see <http://www.gnu.org/licenses/>.
+//
+// Authors: Sam Van den Steen, Ghent University
+//          Moncef Mechri, Uppsala University
+// Copyright: 2016, Ghent University
+
+syntax="proto3";
+package memory_file;
+
+enum Access_Type{
+	LOAD = 0;
+	STORE = 1;
+	LOAD_STORE = 2; //Unused for now
+	INSTRUCTION = 3;
+}
+
+message Memory_Access{
+	uint64 burst_id = 1;
+	uint64 access_counter = 2;
+	uint64 program_counter = 3;
+	uint64 memory_address = 4;
+	Access_Type access_type = 5;
+	uint32 thread_id = 6;
+}
+
+message Sample{
+	Memory_Access begin = 1;
+	// if this field is not set, the sample is considered as dangling.
+	Memory_Access end = 2;
+}
+
+message Burst{
+	uint64 burst_id = 1;
+	uint64 memaccess_begin = 2;
+	uint64 memaccess_end = 3;
+	uint64 instr_begin = 4;
+	uint64 instr_end = 5;
+	uint32 takeoff_loads = 6;
+	uint32 landing_loads = 7;
+	uint32 takeoff_stores = 8;
+	uint32 landing_stores = 9;
+}
+
+message Burst_Profile{
+	repeated Burst bursts = 1;
+	uint32 line_size = 2;
+}

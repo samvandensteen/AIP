@@ -1,0 +1,179 @@
+#  This file is part of the program: Architecture Independent Profiler (AIP).
+#
+#  AIP is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  AIP is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with AIP.  If not, see <http://www.gnu.org/licenses/>.
+#
+#  Authors: Sam Van den Steen, Ghent University
+#  Copyright: 2016, Ghent University
+
+##############################################################
+#
+# This file includes all the test targets as well as all the
+# non-default build rules and test recipes.
+#
+##############################################################
+
+
+##############################################################
+#
+# Test targets
+#
+##############################################################
+
+###### Place all generic definitions here ######
+
+# This defines tests which run tools of the same name.  This is simply for convenience to avoid
+# defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
+# Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
+TEST_TOOL_ROOTS := profiler
+
+# This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
+TEST_ROOTS :=
+
+# This defines a list of tests that should run in the "short" sanity. Tests in this list must also
+# appear either in the TEST_TOOL_ROOTS or the TEST_ROOTS list.
+# If the entire directory should be tested in sanity, assign TEST_TOOL_ROOTS and TEST_ROOTS to the
+# SANITY_SUBSET variable in the tests section below (see example in makefile.rules.tmpl).
+SANITY_SUBSET :=
+
+# This defines the tools which will be run during the the tests, and were not already defined in
+# TEST_TOOL_ROOTS.
+TOOL_ROOTS :=
+
+# This defines the static analysis tools which will be run during the the tests. They should not
+# be defined in TEST_TOOL_ROOTS. If a test with the same name exists, it should be defined in
+# TEST_ROOTS.
+# Note: Static analysis tools are in fact executables linked with the Pin Static Analysis Library.
+# This library provides a subset of the Pin APIs which allows the tool to perform static analysis
+# of an application or dll. Pin itself is not used when this tool runs.
+SA_TOOL_ROOTS :=
+
+# This defines all the applications that will be run during the tests.
+APP_ROOTS :=
+
+# This defines any additional object files that need to be compiled.
+OBJECT_ROOTS :=
+
+# This defines any additional dlls (shared objects), other than the pintools, that need to be compiled.
+DLL_ROOTS :=
+
+# This defines any static libraries (archives), that need to be built.
+LIB_ROOTS :=
+
+
+##############################################################
+#
+# Test recipes
+#
+##############################################################
+
+# This section contains recipes for tests other than the default.
+# See makefile.default.rules for the default test rules.
+# All tests in this section should adhere to the naming convention: <testname>.test
+
+
+##############################################################
+#
+# Build rules
+#
+##############################################################
+
+# This section contains the build rules for all binaries that have special build rules.
+# See makefile.default.rules for the default build rules.
+
+# Get directory of makefile
+ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
+# for now we don't support pinballs (I think they don't work with the versioned instrumentation)
+PINPLAY_HOME = $(PIN_ROOT)/extras/pinplay
+PINPLAY_INCLUDE_HOME = $(PINPLAY_HOME)/include
+PINPLAY_LIB_HOME = $(PINPLAY_HOME)/lib/$(TARGET)
+EXT_LIB_HOME = $(PINPLAY_HOME)/lib-ext/$(TARGET)
+
+INCLUDE_DIR = $(ROOT_DIR)/includes
+UTRACE = $(ROOT_DIR)/utrace
+BRANCH = $(ROOT_DIR)/branch
+DECODER = $(ROOT_DIR)/instruction_decoder
+STATSTACK = $(ROOT_DIR)/statstack
+AIF_LIB = $(ROOT_DIR)/aif_lib
+AIF_LIB_HEADERS = -I$(ROOT_DIR)/aif_lib/aif_proto -I$(ROOT_DIR)/aif_lib/streaming -I$(ROOT_DIR)/aif_lib/util
+
+# Build all
+all: COMPILE_PIN_FLAGS := -g -std=c++0x $(TOOL_CXXFLAGS) -I$(PINPLAY_INCLUDE_HOME)
+all: COMPILE_FLAGS := -g -std=c++0x -O3 -Wall -Wno-unknown-pragmas -fno-stack-protector -fomit-frame-pointer -fno-strict-aliasing -DTARGET_IA32E -DHOST_IA32E -fPIC -DTARGET_LINUX
+all: LINK_FLAGS := -g $(TOOL_LDFLAGS)
+all: $(OBJDIR)profiler
+
+# Build all for debug
+debug: COMPILE_PIN_FLAGS := -g -std=c++0x $(TOOL_CXXFLAGS_NOOPT) -I$(PINPLAY_INCLUDE_HOME)
+debug: COMPILE_FLAGS := -g -std=c++0x -O0 -Wall -Wno-unknown-pragmas -DTARGET_IA32E -DHOST_IA32E -fPIC -DTARGET_LINUX
+debug: LINK_FLAGS := -g $(TOOL_LDFLAGS_NOOPT)
+debug: $(OBJDIR)profiler
+
+# export all flags necessary in makefile in subdirectories
+export INCLUDE_DIR
+export UTRACE
+export DECODER
+export STATSTACK
+export AIF_LIB
+export AIF_LIB_HEADERS
+export COMPILE_PIN_FLAGS
+export COMPILE_FLAGS
+
+BUILD_LIBS = $(AIF_LIB) $(STATSTACK) $(INCLUDE_DIR) $(UTRACE) $(BRANCH) $(DECODER)/libid.a $(CONTROLLERLIB)
+
+$(OBJDIR)profiler$(OBJ_SUFFIX): $(BUILD_LIBS)
+
+$(OBJDIR)profiler$(OBJ_SUFFIX): profiler.cpp
+	$(CXX) -I$(INCLUDE_DIR) -I$(UTRACE) -I$(BRANCH) -I$(DECODER) -I$(STATSTACK) -I$(AIF_LIB) -I$(PINPLAY_INCLUDE_HOME) $(AIF_LIB_HEADERS) $(COMPILE_PIN_FLAGS) $(COMP_OBJ)$@ $<
+
+$(AIF_LIB):
+	make -C aif_lib
+
+$(STATSTACK):
+	make -C statstack
+
+$(INCLUDE_DIR):
+	make -C includes
+
+$(UTRACE):
+	make -C utrace
+
+$(BRANCH):
+	make -C branch
+
+$(DECODER)/libid.a:
+	make -C instruction_decoder
+
+# Build the Pin Controllerlib when necessary
+$(CONTROLLERLIB):
+	make -C $(TOOLS_ROOT)/InstLib dir $(OBJDIR)controller$(LIB_SUFFIX)
+
+# Link everything, Build the tool as a dll (shared object).
+LINK_OBJS = $(wildcard $(BRANCH)/*.o) $(wildcard $(UTRACE)/*.o) $(wildcard $(STATSTACK)/*.o) $(wildcard $(INCLUDE_DIR)/*.o)
+TOOL_LIBS += $(DECODER)/libid.a
+# output libs
+TOOL_LIBS += $(AIF_LIB)/libaif.a -pthread -lprotobuf -lpthread
+# pinplay libs
+TOOL_LIBS += $(PINPLAY_LIB_HOME)/libpinplay.a $(EXT_LIB_HOME)/libbz2.a $(EXT_LIB_HOME)/libz.a $(CONTROLLERLIB)
+
+$(OBJDIR)profiler: $(OBJDIR)profiler$(OBJ_SUFFIX)
+	$(LINKER) $(LINK_FLAGS) $(LINK_EXE) $@ $(^:%.h=) $(TOOL_LPATHS) $(LINK_OBJS) $(TOOL_LIBS) -lbz2
+
+.PHONY: $(AIF_LIB) $(STATSTACK) $(INCLUDE_DIR) $(BRANCH) $(UTRACE) $(CONTROLLERLIB)
+
+##############################################################
+#
+# TESTSCRIPTS
+#
+##############################################################
